@@ -23,5 +23,6 @@
 
         // Other
         <attr name="separatorColor" format="color"/>
+        <attr name="ignoreMaterialGrid" format="boolean" />
     </declare-styleable>
 </resources>

@@ -107,7 +107,9 @@ public abstract class CalendarView extends ViewGroup implements GestureDetector.
     final Drawable mCurrentDayDrawable;
     final float mDecorationSize;
     final float mBetweenSiblingsPadding;
+    final float mMaterialLeftRightPadding;
     boolean mShowOverflow;
+    boolean mIgnoreMaterialGrid;
     final Paint mOverflowPaint;
     final float mOverflowHeight;
     final float mTextSize;
@@ -131,8 +133,7 @@ public abstract class CalendarView extends ViewGroup implements GestureDetector.
 
         try {
             // Text
-            mTextSize = a.getDimension(R.styleable.MonthView_textSize,
-                    getResources().getDimension(R.dimen.calendar_view_default_text_size));
+            mTextSize = a.getDimension(R.styleable.MonthView_textSize, getResources().getDimension(R.dimen.calendar_view_default_text_size));
 
             mCurrentDayTextColor = new Paint(Paint.ANTI_ALIAS_FLAG);
             mCurrentDayTextColor.setColor(a.getColor(R.styleable.MonthView_currentDayTextColor, Color.WHITE));
@@ -168,6 +169,13 @@ public abstract class CalendarView extends ViewGroup implements GestureDetector.
 
             mDecorationSize = a.getDimension(R.styleable.MonthView_currentDayDecorationSize, 0);
             mBetweenSiblingsPadding = dp4;
+
+            mIgnoreMaterialGrid = a.getBoolean(R.styleable.MonthView_ignoreMaterialGrid, false);
+            if (mIgnoreMaterialGrid) {
+                mMaterialLeftRightPadding = 0f;
+            } else {
+                mMaterialLeftRightPadding = dp4 * 4;
+            }
 
             // Overflow
             mShowOverflow = a.getBoolean(R.styleable.MonthView_showOverflow, true);

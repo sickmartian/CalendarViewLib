@@ -326,19 +326,23 @@ public class WeekView extends CalendarView
 
         int COLS = 7;
         int ROWS = 1;
-        float widthStep = w / (float) COLS;
+        float widthStep = ( w - mMaterialLeftRightPadding * 2 ) / (float) COLS;
         float heightStep = ( h - firstRowExtraHeight ) / (float) ROWS;
         for (int col = 0; col < COLS; col++) {
             float lastBottom = INITIAL;
             for (int row = 0; row < ROWS; row++) {
                 if (row == 0) {
                     lastBottom = (heightStep + firstRowExtraHeight);
-                    mDayCells[row * COLS  + col] = new RectF(widthStep * col, heightStep * row,
-                            widthStep * (col + 1), lastBottom);
+                    mDayCells[row * COLS  + col] = new RectF(widthStep * col + mMaterialLeftRightPadding,
+                            heightStep * row,
+                            widthStep * (col + 1) + mMaterialLeftRightPadding,
+                            lastBottom);
                 } else {
                     float newBottom = (lastBottom + heightStep);
-                    mDayCells[row * COLS  + col] = new RectF(widthStep * col, lastBottom,
-                            widthStep * (col + 1), newBottom);
+                    mDayCells[row * COLS  + col] = new RectF(widthStep * col + mMaterialLeftRightPadding,
+                            lastBottom,
+                            widthStep * (col + 1) + mMaterialLeftRightPadding,
+                            newBottom);
                     lastBottom = newBottom;
                 }
             }
@@ -430,12 +434,7 @@ public class WeekView extends CalendarView
 
         // Weekdays and day numbers
         for (int i = 0; i < DAYS_IN_GRID; i++) {
-            // Selected day has special background
-            if (i == mSelectedCell) {
-                drawBackgroundForCellInColor(canvas, i, mSelectedBackgroundColor);
-            } else {
-                drawBackgroundForCellInColor(canvas, i, mActiveBackgroundColor);
-            }
+            drawBackgroundForCell(canvas, i, i == mSelectedCell, mSelectedBackgroundColor, mActiveBackgroundColor);
 
             // Current day might have a decoration
             if (mCurrentCell == i && mCurrentDayDrawable != null) {
@@ -468,14 +467,63 @@ public class WeekView extends CalendarView
         }
     }
 
-    private void drawBackgroundForCellInColor(Canvas canvas, int cellNumber, Paint backgroundColor) {
-        RectF backgroundRect = new RectF(
-                mDayCells[cellNumber].left,
-                mDayCells[cellNumber].top,
-                mDayCells[cellNumber].right,
-                mDayCells[cellNumber].bottom
-        );
-        canvas.drawRect(backgroundRect, backgroundColor);
+    private void drawBackgroundForCell(Canvas canvas, int cellNumber,
+                                       boolean selected,
+                                       Paint selectedBackgroundColor,
+                                       Paint backgroundColor) {
+
+        if (!mIgnoreMaterialGrid) {
+            // Calculate padding for this cell
+            float additionalLeft = 0f;
+            float additionalRight = 0f;
+            if (cellNumber == 0) {
+                additionalLeft = mMaterialLeftRightPadding * -1;
+                additionalRight = 0;
+            } else if (cellNumber == 6) {
+                additionalLeft = 0;
+                additionalRight = mMaterialLeftRightPadding;
+            } else {
+                additionalLeft = 0;
+                additionalRight = 0;
+            }
+
+            if (!selected) {
+                // Just paint unselected
+                RectF backgroundRect = new RectF(
+                        mDayCells[cellNumber].left + additionalLeft,
+                        mDayCells[cellNumber].top,
+                        mDayCells[cellNumber].right + additionalRight,
+                        mDayCells[cellNumber].bottom);
+                canvas.drawRect(backgroundRect, backgroundColor);
+            } else {
+                // If selected, we still paint the background
+                RectF backgroundRect = new RectF(
+                        mDayCells[cellNumber].left + additionalLeft,
+                        mDayCells[cellNumber].top,
+                        mDayCells[cellNumber].right + additionalRight,
+                        mDayCells[cellNumber].bottom);
+                canvas.drawRect(backgroundRect, backgroundColor);
+                // And then the selection with padding to the background:
+                backgroundRect.left = mDayCells[cellNumber].left;
+                backgroundRect.right = mDayCells[cellNumber].right;
+                canvas.drawRect(backgroundRect, selectedBackgroundColor);
+            }
+        } else {
+            // Just paint with the correct color
+            Paint color;
+            if (selected) {
+                color = selectedBackgroundColor;
+            } else {
+                color = backgroundColor;
+            }
+            RectF backgroundRect = new RectF(
+                    mDayCells[cellNumber].left,
+                    mDayCells[cellNumber].top,
+                    mDayCells[cellNumber].right,
+                    mDayCells[cellNumber].bottom);
+            canvas.drawRect(backgroundRect, color);
+        }
+
     }
 
     private void drawDayTextsInCell(Canvas canvas,
