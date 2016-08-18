@@ -676,9 +676,10 @@ public class WeekView extends CalendarView
 
         public MyOwnState(Parcel in) {
             super(in);
-            mDay.setDay(in.readInt());
-            mDay.setMonth(in.readInt());
-            mDay.setYear(in.readInt());
+            int day = in.readInt();
+            int month = in.readInt();
+            int year = in.readInt();
+            mDay = new DayMetadata(year, month, day);
             mCurrentCell = in.readInt();
             mSelectedCell = in.readInt();
         }
