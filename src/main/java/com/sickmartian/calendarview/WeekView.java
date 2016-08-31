@@ -465,6 +465,15 @@ public class WeekView extends CalendarView
                         mDayCells[cellWithOverflow].right, mDayCells[cellWithOverflow].bottom, mOverflowPaint);
             }
         }
+        // Separation
+        if (mSeparateDaysVertically) {
+            canvas.drawLine(mDayCells[0].right, 0, mDayCells[0].right, getHeight(), mSeparationPaint);
+            canvas.drawLine(mDayCells[1].right, 0, mDayCells[1].right, getHeight(), mSeparationPaint);
+            canvas.drawLine(mDayCells[2].right, 0, mDayCells[2].right, getHeight(), mSeparationPaint);
+            canvas.drawLine(mDayCells[3].right, 0, mDayCells[3].right, getHeight(), mSeparationPaint);
+            canvas.drawLine(mDayCells[4].right, 0, mDayCells[4].right, getHeight(), mSeparationPaint);
+            canvas.drawLine(mDayCells[5].right, 0, mDayCells[5].right, getHeight(), mSeparationPaint);
+        }
     }
 
     private void drawBackgroundForCell(Canvas canvas, int cellNumber,

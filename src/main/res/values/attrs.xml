@@ -22,6 +22,7 @@
         <attr name="overflowHeight" format="dimension" />
 
         // Other
+        <attr name="separateDaysVertically" format="boolean" />
         <attr name="separatorColor" format="color"/>
         <attr name="ignoreMaterialGrid" format="boolean" />
     </declare-styleable>

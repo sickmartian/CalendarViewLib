@@ -110,6 +110,7 @@ public abstract class CalendarView extends ViewGroup implements GestureDetector.
     final float mMaterialLeftRightPadding;
     boolean mShowOverflow;
     boolean mIgnoreMaterialGrid;
+    boolean mSeparateDaysVertically;
     final Paint mOverflowPaint;
     final float mOverflowHeight;
     final float mTextSize;
@@ -176,6 +177,8 @@ public abstract class CalendarView extends ViewGroup implements GestureDetector.
             } else {
                 mMaterialLeftRightPadding = dp4 * 4;
             }
+
+            mSeparateDaysVertically = a.getBoolean(R.styleable.MonthView_separateDaysVertically, false);
 
             // Overflow
             mShowOverflow = a.getBoolean(R.styleable.MonthView_showOverflow, true);
