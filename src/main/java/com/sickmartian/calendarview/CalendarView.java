@@ -266,6 +266,16 @@ public abstract class CalendarView extends ViewGroup implements GestureDetector.
         return mFirstDayOfTheWeekShift;
     }
 
+    public boolean hasDayVertialSeparation() {
+        return mSeparateDaysVertically;
+    }
+    public void setSeparateDaysVertically(boolean separateDaysVertically) {
+        if (separateDaysVertically != mSeparateDaysVertically) {
+            mSeparateDaysVertically = separateDaysVertically;
+            invalidate();
+        }
+    }
+
     public void setShowOverflow(boolean showOverflow) {
         if (showOverflow != mShowOverflow) {
             mShowOverflow = showOverflow;
