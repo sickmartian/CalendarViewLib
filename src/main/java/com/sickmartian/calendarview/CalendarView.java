@@ -107,7 +107,7 @@ public abstract class CalendarView extends ViewGroup implements GestureDetector.
     final Drawable mCurrentDayDrawable;
     final float mDecorationSize;
     final float mBetweenSiblingsPadding;
-    final float mMaterialLeftRightPadding;
+    float mMaterialLeftRightPadding;
     boolean mShowOverflow;
     boolean mIgnoreMaterialGrid;
     boolean mSeparateDaysVertically;
@@ -116,6 +116,7 @@ public abstract class CalendarView extends ViewGroup implements GestureDetector.
     final float mTextSize;
     final Paint mCurrentDayTextColor;
     final float dp1;
+    final float dp4;
     final Rect mReusableTextBound = new Rect();
     final float mEndOfHeaderWithoutWeekday;
     final float mEndOfHeaderWithWeekday;
@@ -129,7 +130,7 @@ public abstract class CalendarView extends ViewGroup implements GestureDetector.
                 R.styleable.MonthView,
                 0, 0);
 
-        float dp4 = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 4, getResources().getDisplayMetrics());
+        dp4 = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 4, getResources().getDisplayMetrics());
         dp1 = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1, getResources().getDisplayMetrics());
 
         try {
@@ -171,12 +172,8 @@ public abstract class CalendarView extends ViewGroup implements GestureDetector.
             mDecorationSize = a.getDimension(R.styleable.MonthView_currentDayDecorationSize, 0);
             mBetweenSiblingsPadding = dp4;
 
-            mIgnoreMaterialGrid = a.getBoolean(R.styleable.MonthView_ignoreMaterialGrid, false);
-            if (mIgnoreMaterialGrid) {
-                mMaterialLeftRightPadding = 0f;
-            } else {
-                mMaterialLeftRightPadding = dp4 * 4;
-            }
+            mIgnoreMaterialGrid = a.getBoolean(R.styleable.MonthView_ignoreMaterialGrid, true);
+            recalculatePadding();
 
             mSeparateDaysVertically = a.getBoolean(R.styleable.MonthView_separateDaysVertically, false);
 
@@ -213,6 +210,14 @@ public abstract class CalendarView extends ViewGroup implements GestureDetector.
         setWillNotDraw(false);
 
         mWeekDays = getWeekdaysForShift(mFirstDayOfTheWeekShift);
+    }
+
+    private void recalculatePadding() {
+        if (mIgnoreMaterialGrid) {
+            mMaterialLeftRightPadding = 0f;
+        } else {
+            mMaterialLeftRightPadding = dp4 * 4;
+        }
     }
 
     // Utils for calendar
@@ -284,6 +289,17 @@ public abstract class CalendarView extends ViewGroup implements GestureDetector.
     }
     public boolean isOverflowShown() {
         return mShowOverflow;
+    }
+
+    public boolean isIgnoringMaterialGrid() {
+        return mIgnoreMaterialGrid;
+    }
+    public void setIgnoreMaterialGrid(boolean ignoreMaterialGrid) {
+        if (ignoreMaterialGrid != mIgnoreMaterialGrid) {
+            mIgnoreMaterialGrid = ignoreMaterialGrid;
+            recalculatePadding();
+            invalidate();
+        }
     }
 
     public abstract void removeAllContent();
