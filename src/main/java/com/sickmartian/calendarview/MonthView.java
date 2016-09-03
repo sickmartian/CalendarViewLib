@@ -749,7 +749,7 @@ public class MonthView extends CalendarView
 
     // Other
     @Override
-    protected String getLogTag() {
+    public String toString() {
         return mYear + "-" + (mMonth + 1);
     }
 }

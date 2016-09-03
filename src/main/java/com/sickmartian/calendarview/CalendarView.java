@@ -321,8 +321,6 @@ public abstract class CalendarView extends ViewGroup implements GestureDetector.
     public abstract ArrayList<View> getCellContent(int cellNumber);
     public abstract void setCellContent(int cellNumber, ArrayList<View> newContent);
 
-    protected abstract String getLogTag();
-
     // Interaction
     GestureDetectorCompat mDetector;
     DaySelectionListener mDaySelectionListener;
@@ -340,19 +338,25 @@ public abstract class CalendarView extends ViewGroup implements GestureDetector.
     }
 
     @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        if (DEBUG) Log.d(toString() + "@" + System.identityHashCode(this), "onSizeChanged");
+    }
+
+    @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        if (DEBUG) Log.d(getLogTag(), "onDraw");
+        if (DEBUG) Log.d(toString() + "@" + System.identityHashCode(this), "onDraw");
     }
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
-        if (DEBUG) Log.d(getLogTag(), "onLayout");
+        if (DEBUG) Log.d(toString() + "@" + System.identityHashCode(this), "onLayout");
     }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        if (DEBUG) Log.d(getLogTag(), "onMeasure");
+        if (DEBUG) Log.d(toString() + "@" + System.identityHashCode(this), "onMeasure");
     }
 }

@@ -716,7 +716,7 @@ public class WeekView extends CalendarView
 
     // Other
     @Override
-    protected String getLogTag() {
+    public String toString() {
         return mDay.getYear() + "-" + mDay.getMonth() + "-" + mDay.getDay();
     }
 
