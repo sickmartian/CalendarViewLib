@@ -328,8 +328,16 @@ public class MonthView extends CalendarView
     }
 
     // View methods
+    int mLastKnownWidth;
+    int mLastKnownHeight;
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        recalculateCells(w, h);
+        mLastKnownWidth = w;
+        mLastKnownHeight = h;
+    }
+
+    public void recalculateCells(int w, int h) {
         int firstRowExtraHeight = (int) (mSingleLetterHeight + mBetweenSiblingsPadding);
 
         int COLS = 7;
@@ -689,7 +697,8 @@ public class MonthView extends CalendarView
         myOwnState.mMonth = mMonth;
         myOwnState.mCurrentDay = mCurrentDay;
         myOwnState.mSelectedDay = mSelectedDay;
-
+        myOwnState.mLastKnownWidth = mLastKnownWidth;
+        myOwnState.mLastKnownHeight = mLastKnownHeight;
         return myOwnState;
     }
 
@@ -706,6 +715,9 @@ public class MonthView extends CalendarView
         setDateInternal(myOwnState.mMonth, myOwnState.mYear);
         setCurrentDay(myOwnState.mCurrentDay);
         setSelectedDay(myOwnState.mSelectedDay);
+        mLastKnownWidth = myOwnState.mLastKnownWidth;
+        mLastKnownHeight = myOwnState.mLastKnownHeight;
+        recalculateCells(mLastKnownWidth, mLastKnownHeight);
     }
 
     private static class MyOwnState extends BaseSavedState {
@@ -713,6 +725,8 @@ public class MonthView extends CalendarView
         int mSelectedDay;
         int mYear;
         int mMonth;
+        int mLastKnownWidth;
+        int mLastKnownHeight;
 
         public MyOwnState(Parcelable superState) {
             super(superState);
@@ -724,6 +738,8 @@ public class MonthView extends CalendarView
             mMonth = in.readInt();
             mCurrentDay = in.readInt();
             mSelectedDay = in.readInt();
+            mLastKnownWidth = in.readInt();
+            mLastKnownHeight = in.readInt();
         }
 
         @Override
@@ -733,6 +749,8 @@ public class MonthView extends CalendarView
             out.writeInt(mMonth);
             out.writeInt(mCurrentDay);
             out.writeInt(mSelectedDay);
+            out.writeInt(mLastKnownWidth);
+            out.writeInt(mLastKnownHeight);
         }
 
         public static final Parcelable.Creator<MyOwnState> CREATOR =

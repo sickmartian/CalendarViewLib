@@ -320,8 +320,16 @@ public class WeekView extends CalendarView
     }
 
     // View methods
+    int mLastKnownWidth;
+    int mLastKnownHeight;
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        recalculateCells(w, h);
+        mLastKnownWidth = w;
+        mLastKnownHeight = h;
+    }
+
+    public void recalculateCells(int w, int h) {
         int firstRowExtraHeight = (int) (mSingleLetterHeight + mBetweenSiblingsPadding);
 
         int COLS = 7;
@@ -525,6 +533,13 @@ public class WeekView extends CalendarView
             } else {
                 color = backgroundColor;
             }
+            if (mDayCells[cellNumber] == null) {
+                RectF backgroundRect = new RectF(
+                        mDayCells[cellNumber].left,
+                        mDayCells[cellNumber].top,
+                        mDayCells[cellNumber].right,
+                        mDayCells[cellNumber].bottom);
+            }
             RectF backgroundRect = new RectF(
                     mDayCells[cellNumber].left,
                     mDayCells[cellNumber].top,
@@ -655,7 +670,8 @@ public class WeekView extends CalendarView
         myOwnState.mDay = mDay;
         myOwnState.mCurrentCell = mCurrentCell;
         myOwnState.mSelectedCell = mSelectedCell;
-
+        myOwnState.mLastKnownWidth = mLastKnownWidth;
+        myOwnState.mLastKnownHeight = mLastKnownHeight;
         return myOwnState;
     }
 
@@ -672,12 +688,17 @@ public class WeekView extends CalendarView
         setDateInternal(myOwnState.mDay);
         mCurrentCell = myOwnState.mCurrentCell;
         mSelectedCell = myOwnState.mSelectedCell;
+        mLastKnownWidth = myOwnState.mLastKnownWidth;
+        mLastKnownHeight = myOwnState.mLastKnownHeight;
+        recalculateCells(mLastKnownWidth, mLastKnownHeight);
     }
 
     private static class MyOwnState extends BaseSavedState {
         int mCurrentCell;
         int mSelectedCell;
         DayMetadata mDay;
+        int mLastKnownWidth;
+        int mLastKnownHeight;
 
         public MyOwnState(Parcelable superState) {
             super(superState);
@@ -691,6 +712,8 @@ public class WeekView extends CalendarView
             mDay = new DayMetadata(year, month, day);
             mCurrentCell = in.readInt();
             mSelectedCell = in.readInt();
+            mLastKnownWidth = in.readInt();
+            mLastKnownHeight = in.readInt();
         }
 
         @Override
@@ -701,6 +724,8 @@ public class WeekView extends CalendarView
             out.writeInt(mDay.getYear());
             out.writeInt(mCurrentCell);
             out.writeInt(mSelectedCell);
+            out.writeInt(mLastKnownWidth);
+            out.writeInt(mLastKnownHeight);
         }
 
         public static final Creator<MyOwnState> CREATOR =
