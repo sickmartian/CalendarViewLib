@@ -261,7 +261,7 @@ public class MonthView extends CalendarView
 
     public ArrayList<View> getDayContent(DayMetadata dayMetadata) {
         if (dayMetadata != null) {
-            if (dayMetadata.getMonth() == mMonth && dayMetadata.getYear() == mYear) {
+            if (dayMetadata.getMonth() == (mMonth + 1) && dayMetadata.getYear() == mYear) {
                 return getDayContent(dayMetadata.getDay());
             }
         }
@@ -270,7 +270,7 @@ public class MonthView extends CalendarView
 
     public void setDayContent(DayMetadata dayMetadata, ArrayList<View> newContent) {
         if (dayMetadata != null) {
-            if (dayMetadata.getMonth() == mMonth && dayMetadata.getYear() == mYear) {
+            if (dayMetadata.getMonth() == (mMonth + 1) && dayMetadata.getYear() == mYear) {
                 setDayContent(dayMetadata.getDay(), newContent);
             }
         }
@@ -317,7 +317,7 @@ public class MonthView extends CalendarView
     }
 
     public void addViewToDay(DayMetadata dayMetadata, View viewToAppend) {
-        if (dayMetadata.getMonth() == mMonth && dayMetadata.getYear() == mYear) {
+        if (dayMetadata.getMonth() == (mMonth + 1) && dayMetadata.getYear() == mYear) {
             addViewToDayInCurrentMonth(dayMetadata.getDay(), viewToAppend);
         }
     }
