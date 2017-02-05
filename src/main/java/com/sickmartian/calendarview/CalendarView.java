@@ -23,7 +23,7 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 /**
- * Created by ***REMOVED*** on 2/20/2016.
+ * Created by sickmartian on 2/20/2016.
  */
 public abstract class CalendarView extends ViewGroup implements GestureDetector.OnGestureListener {
 

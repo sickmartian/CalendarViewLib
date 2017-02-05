@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 
 /**
- * Created by ***REMOVED*** on 11/24/2015.
+ * Created by sickmartian on 11/24/2015.
  */
 public class MonthView extends CalendarView
         implements GestureDetector.OnGestureListener {
