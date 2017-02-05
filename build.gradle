@@ -1,13 +1,27 @@
-buildscript {
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath 'com.android.tools.build:gradle:2.2.3'
-    }
-}
-
 apply plugin: 'com.android.library'
+ext {
+    bintrayRepo = 'maven'
+    bintrayName = 'calendarview'
+
+    publishedGroupId = 'com.sickmartian.calendarview'
+    libraryName = 'CalendarView'
+    artifact = 'calendarview'
+
+    libraryDescription = 'The Month and Week views that power the Trackendar android app'
+
+    siteUrl = 'https://github.com/sickmartian/CalendarView'
+    gitUrl = 'https://github.com/sickmartian/CalendarView'
+
+    libraryVersion = '1.0.0'
+
+    developerId = 'sickmartian'
+    developerName = 'sickmartian'
+    developerEmail = 'sickmartian@gmail.com'
+
+    licenseName = 'The Apache Software License, Version 2.0'
+    licenseUrl = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+    allLicenses = ["Apache-2.0"]
+}
 
 android {
     compileSdkVersion 23
@@ -32,3 +46,10 @@ dependencies {
     compile 'com.android.support:support-v4:23.1.1'
 
 }
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
+
+apply from: 'install.gradle'
+apply from: 'bintray.gradle'
