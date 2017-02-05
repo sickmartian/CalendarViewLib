@@ -10,7 +10,7 @@ ext {
     libraryDescription = 'The Month and Week views that power the Trackendar android app'
 
     siteUrl = 'https://github.com/sickmartian/CalendarView'
-    gitUrl = 'https://github.com/sickmartian/CalendarView'
+    gitUrl = 'https://github.com/sickmartian/CalendarView.git'
 
     libraryVersion = '1.0.0'
 
