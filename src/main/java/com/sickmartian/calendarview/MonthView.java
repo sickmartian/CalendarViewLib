@@ -447,6 +447,8 @@ public class MonthView extends CalendarView
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
+        if (getWidth() == 0 || getHeight() == 0) return; // Never got measured, nothing to draw
+
         canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
 
         // Weekdays and day numbers
