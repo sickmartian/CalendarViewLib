@@ -33,12 +33,15 @@ public abstract class CalendarView extends ViewGroup implements GestureDetector.
     protected String[] mWeekDays;
 
     @IntDef({SUNDAY_SHIFT, SATURDAY_SHIFT, MONDAY_SHIFT})
-    public @interface PossibleWeekShift {}
+    @interface PossibleWeekShift {
+    }
+
     public static final int SUNDAY_SHIFT = 0;
     public static final int SATURDAY_SHIFT = 1;
     public static final int MONDAY_SHIFT = 6;
     protected int mFirstDayOfTheWeekShift = SUNDAY_SHIFT;
 
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public static class DayMetadata {
         int year;
         int month;
@@ -83,10 +86,7 @@ public abstract class CalendarView extends ViewGroup implements GestureDetector.
 
             DayMetadata that = (DayMetadata) o;
 
-            if (year != that.year) return false;
-            if (month != that.month) return false;
-            return day == that.day;
-
+            return year == that.year && month == that.month && day == that.day;
         }
 
         @Override
@@ -122,6 +122,7 @@ public abstract class CalendarView extends ViewGroup implements GestureDetector.
     final float mEndOfHeaderWithWeekday;
     final int mSingleLetterWidth;
     final int mSingleLetterHeight;
+
     public CalendarView(Context context, AttributeSet attrs) {
         super(context, attrs);
 
@@ -196,7 +197,7 @@ public abstract class CalendarView extends ViewGroup implements GestureDetector.
         mSingleLetterWidth = mReusableTextBound.width();
         mSingleLetterHeight = mReusableTextBound.height();
         if (mDecorationSize > 0) {
-            mEndOfHeaderWithoutWeekday = mBetweenSiblingsPadding * 2+ mDecorationSize;
+            mEndOfHeaderWithoutWeekday = mBetweenSiblingsPadding * 2 + mDecorationSize;
             mEndOfHeaderWithWeekday = mBetweenSiblingsPadding * 3 + mDecorationSize + mSingleLetterHeight;
         } else {
             mEndOfHeaderWithoutWeekday = mBetweenSiblingsPadding * 2 + mSingleLetterHeight;
@@ -221,14 +222,20 @@ public abstract class CalendarView extends ViewGroup implements GestureDetector.
     }
 
     // Utils for calendar
+    @SuppressWarnings("unused")
     public static int getCalendarDayForShift(@PossibleWeekShift int weekShift) {
         int dayForShift;
         switch (weekShift) {
             case SUNDAY_SHIFT: {
                 dayForShift = Calendar.SUNDAY;
                 break;
-            } case SATURDAY_SHIFT: {
+            }
+            case SATURDAY_SHIFT: {
                 dayForShift = Calendar.SATURDAY;
+                break;
+            }
+            case MONDAY_SHIFT: {
+                dayForShift = Calendar.MONDAY;
                 break;
             } default: {
                 dayForShift = Calendar.MONDAY;
@@ -267,13 +274,16 @@ public abstract class CalendarView extends ViewGroup implements GestureDetector.
 
     // Common interface
     public abstract void setFirstDayOfTheWeek(int firstDayOfTheWeekShift);
+
     public int getFirstDayOfTheWeek() {
         return mFirstDayOfTheWeekShift;
     }
 
+    @SuppressWarnings("unused")
     public boolean hasDayVertialSeparation() {
         return mSeparateDaysVertically;
     }
+
     public void setSeparateDaysVertically(boolean separateDaysVertically) {
         if (separateDaysVertically != mSeparateDaysVertically) {
             mSeparateDaysVertically = separateDaysVertically;
@@ -287,13 +297,17 @@ public abstract class CalendarView extends ViewGroup implements GestureDetector.
             invalidate();
         }
     }
+
+    @SuppressWarnings("unused")
     public boolean isOverflowShown() {
         return mShowOverflow;
     }
 
+    @SuppressWarnings("unused")
     public boolean isIgnoringMaterialGrid() {
         return mIgnoreMaterialGrid;
     }
+
     public void setIgnoreMaterialGrid(boolean ignoreMaterialGrid) {
         if (ignoreMaterialGrid != mIgnoreMaterialGrid) {
             mIgnoreMaterialGrid = ignoreMaterialGrid;
@@ -305,29 +319,41 @@ public abstract class CalendarView extends ViewGroup implements GestureDetector.
     public abstract void removeAllContent();
 
     public abstract void setCurrentDay(Calendar currentDay);
+
+    @SuppressWarnings("unused")
     public abstract void setCurrentDay(DayMetadata dayMetadata);
+
+    @SuppressWarnings("unused")
     public abstract void setSelectedDay(Calendar selectedDay);
+
     public abstract void setSelectedDay(DayMetadata dayMetadata);
 
     public abstract DayMetadata getSelectedDay();
+
     public abstract int getSelectedCell();
 
     public abstract void addViewToDay(DayMetadata dayMetadata, View viewToAppend);
+
     public abstract void addViewToCell(int cellNumber, View viewToAppend);
 
     public abstract ArrayList<View> getDayContent(DayMetadata day);
+
     public abstract void setDayContent(DayMetadata day, ArrayList<View> newContent);
 
     public abstract ArrayList<View> getCellContent(int cellNumber);
+
     public abstract void setCellContent(int cellNumber, ArrayList<View> newContent);
 
     // Interaction
     GestureDetectorCompat mDetector;
     DaySelectionListener mDaySelectionListener;
+
     public interface DaySelectionListener {
         void onTapEnded(CalendarView calendarView, DayMetadata day);
+
         void onLongClick(CalendarView calendarView, DayMetadata day);
     }
+
     public void setDaySelectedListener(DaySelectionListener listener) {
         this.mDaySelectionListener = listener;
     }
