@@ -8,7 +8,6 @@ import android.graphics.PorterDuff;
 import android.graphics.RectF;
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.support.v4.view.GestureDetectorCompat;
 import android.util.AttributeSet;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
@@ -20,10 +19,8 @@ import java.util.Calendar;
 /**
  * Created by sickmartian on 11/24/2015.
  */
-public class WeekView extends CalendarView
-        implements GestureDetector.OnGestureListener {
-
-    private static final int INITIAL = -1;
+public class WeekView extends CalendarView implements GestureDetector.OnGestureListener {
+    public static final int ROWS = 1;
     public static final int DAYS_IN_GRID = 7;
     private static final String SINGLE_DIGIT_DAY_WIDTH_TEMPLATE = "7";
     private static final String DOUBLE_DIGIT_DAY_WIDTH_TEMPLATE = "30";
@@ -44,11 +41,6 @@ public class WeekView extends CalendarView
         super(context, attrs);
     }
 
-    private void setupInteraction(Context context) {
-        mDetector = new GestureDetectorCompat(context, this);
-        mDetector.setIsLongpressEnabled(true);
-    }
-
     private void setDateInternal(DayMetadata dayMetadata) {
         mDay = dayMetadata;
 
@@ -63,7 +55,7 @@ public class WeekView extends CalendarView
         firstDayOfWeek.set(Calendar.DATE, mDay.getDay());
 
         int anyDayOfTheWeek = firstDayOfWeek.get(Calendar.DAY_OF_WEEK) - 1; // Starting on Sunday
-        int givenDayDifferentToStart = ( anyDayOfTheWeek + mFirstDayOfTheWeekShift ) % 7;
+        int givenDayDifferentToStart = ( anyDayOfTheWeek + mFirstDayOfTheWeekShift ) % DAYS_IN_WEEK;
         firstDayOfWeek.add(Calendar.DATE, givenDayDifferentToStart * -1);
 
         int lastDay;
@@ -307,12 +299,14 @@ public class WeekView extends CalendarView
         requestLayout();
     }
 
+    @SuppressWarnings("unused")
     public DayMetadata getFirstDay() {
         if (mDayMetadata == null) return null;
 
         return mDayMetadata[0];
     }
 
+    @SuppressWarnings("unused")
     public DayMetadata getLastDay() {
         if (mDayMetadata == null) return null;
 
@@ -324,41 +318,16 @@ public class WeekView extends CalendarView
     int mLastKnownHeight;
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-        recalculateCells(w, h);
+        super.onSizeChanged(w, h, oldw, oldh);
+
         mLastKnownWidth = w;
         mLastKnownHeight = h;
     }
 
-    public void recalculateCells(int w, int h) {
-        int firstRowExtraHeight = (int) (mSingleLetterHeight + mBetweenSiblingsPadding);
-
-        int COLS = 7;
-        int ROWS = 1;
-        float widthStep = ( w - mMaterialLeftRightPadding * 2 ) / (float) COLS;
-        float heightStep = ( h - firstRowExtraHeight ) / (float) ROWS;
-        for (int col = 0; col < COLS; col++) {
-            float lastBottom = INITIAL;
-            for (int row = 0; row < ROWS; row++) {
-                if (row == 0) {
-                    lastBottom = (heightStep + firstRowExtraHeight);
-                    mDayCells[row * COLS  + col] = new RectF(widthStep * col + mMaterialLeftRightPadding,
-                            heightStep * row,
-                            widthStep * (col + 1) + mMaterialLeftRightPadding,
-                            lastBottom);
-                } else {
-                    float newBottom = (lastBottom + heightStep);
-                    mDayCells[row * COLS  + col] = new RectF(widthStep * col + mMaterialLeftRightPadding,
-                            lastBottom,
-                            widthStep * (col + 1) + mMaterialLeftRightPadding,
-                            newBottom);
-                    lastBottom = newBottom;
-                }
-            }
-        }
-    }
-
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+
         // We have a fixed size, we can omit some child views if they don't fit later
         int w = resolveSizeAndState((int) (
                 (mSingleLetterWidth + mBetweenSiblingsPadding ) // Single column min size
@@ -370,20 +339,16 @@ public class WeekView extends CalendarView
         setMeasuredDimension(w, h);
 
         // Measure child layouts if we have
+        recalculateCells(w, h, mDayCells, ROWS);
         if (mDayCells.length == 0 || mDayCells[0] == null) return;
 
-        float alreadyUsedTop = mEndOfHeaderWithWeekday;
         for (int i = 0; i < DAYS_IN_GRID; i++) {
-            if (i >= DAYS_IN_WEEK) {
-                alreadyUsedTop = mEndOfHeaderWithoutWeekday;
-            }
-
             ArrayList<View> childArrayForDay = mChildInDays.get(i);
             for (int j = 0; j < childArrayForDay.size(); j++) {
                 View viewToPlace = childArrayForDay.get(j);
                 if (viewToPlace.getVisibility() != GONE) {
                     int wSpec = MeasureSpec.makeMeasureSpec(Math.round(mDayCells[i].width()), MeasureSpec.EXACTLY);
-                    int hSpec = MeasureSpec.makeMeasureSpec(Math.round(mDayCells[i].height() - alreadyUsedTop), MeasureSpec.AT_MOST);
+                    int hSpec = MeasureSpec.makeMeasureSpec(Math.round(mDayCells[i].height() - mEndOfHeaderWithWeekday), MeasureSpec.AT_MOST);
                     viewToPlace.measure(wSpec, hSpec);
                 }
             }
@@ -398,11 +363,7 @@ public class WeekView extends CalendarView
         float topOffset;
         for (int i = 0; i < DAYS_IN_GRID; i++) {
             ArrayList<View> childArrayForDay = mChildInDays.get(i);
-            if (i >= 7) {
-                topOffset = mEndOfHeaderWithoutWeekday;
-            } else {
-                topOffset = mEndOfHeaderWithWeekday;
-            }
+            topOffset = mEndOfHeaderWithWeekday;
 
             int cellBottom = (int) (mDayCells[i].bottom - mOverflowHeight);
             for (int j = 0; j < childArrayForDay.size(); j++) {
@@ -443,6 +404,7 @@ public class WeekView extends CalendarView
         canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
 
         // Weekdays and day numbers
+        float topOffset = mBetweenSiblingsPadding * 2 + mSingleLetterHeight;
         for (int i = 0; i < DAYS_IN_GRID; i++) {
             drawBackgroundForCell(canvas, i, i == mSelectedCell, mSelectedBackgroundColor, mActiveBackgroundColor);
 
@@ -450,10 +412,6 @@ public class WeekView extends CalendarView
             if (mCurrentCell == i && mCurrentDayDrawable != null) {
 
                 // Decoration
-                float topOffset = mBetweenSiblingsPadding;
-                if (i < 7) {
-                    topOffset += mBetweenSiblingsPadding + mSingleLetterHeight;
-                }
                 mCurrentDayDrawable.setBounds(
                         (int) (mDayCells[i].left + mBetweenSiblingsPadding),
                         (int) (mDayCells[i].top + topOffset),
@@ -493,8 +451,8 @@ public class WeekView extends CalendarView
 
         if (!mIgnoreMaterialGrid) {
             // Calculate padding for this cell
-            float additionalLeft = 0f;
-            float additionalRight = 0f;
+            float additionalLeft;
+            float additionalRight;
             if (cellNumber == 0) {
                 additionalLeft = mMaterialLeftRightPadding * -1;
                 additionalRight = 0;
@@ -535,13 +493,6 @@ public class WeekView extends CalendarView
             } else {
                 color = backgroundColor;
             }
-            if (mDayCells[cellNumber] == null) {
-                RectF backgroundRect = new RectF(
-                        mDayCells[cellNumber].left,
-                        mDayCells[cellNumber].top,
-                        mDayCells[cellNumber].right,
-                        mDayCells[cellNumber].bottom);
-            }
             RectF backgroundRect = new RectF(
                     mDayCells[cellNumber].left,
                     mDayCells[cellNumber].top,
@@ -558,7 +509,7 @@ public class WeekView extends CalendarView
                                     Paint mCurrentWeekDayTextColor) {
         float topOffset = 0;
         // Weekday
-        if (cellNumber < 7) {
+        if (cellNumber < DAYS_IN_WEEK) {
             mCurrentWeekDayTextColor.getTextBounds("S", 0, 1, mReusableTextBound);
 
             int decorationLeftOffset = 0;
@@ -692,7 +643,7 @@ public class WeekView extends CalendarView
         mSelectedCell = myOwnState.mSelectedCell;
         mLastKnownWidth = myOwnState.mLastKnownWidth;
         mLastKnownHeight = myOwnState.mLastKnownHeight;
-        recalculateCells(mLastKnownWidth, mLastKnownHeight);
+        recalculateCells(mLastKnownWidth, mLastKnownHeight, mDayCells, ROWS);
     }
 
     private static class MyOwnState extends BaseSavedState {
@@ -702,11 +653,11 @@ public class WeekView extends CalendarView
         int mLastKnownWidth;
         int mLastKnownHeight;
 
-        public MyOwnState(Parcelable superState) {
+        MyOwnState(Parcelable superState) {
             super(superState);
         }
 
-        public MyOwnState(Parcel in) {
+        MyOwnState(Parcel in) {
             super(in);
             int day = in.readInt();
             int month = in.readInt();
