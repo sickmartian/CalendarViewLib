@@ -6,6 +6,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.support.annotation.IntDef;
 import android.support.v4.view.GestureDetectorCompat;
@@ -26,19 +27,22 @@ import java.util.TimeZone;
  * Created by sickmartian on 2/20/2016.
  */
 public abstract class CalendarView extends ViewGroup implements GestureDetector.OnGestureListener {
-
     public static boolean DEBUG = false;
 
+    protected static final int INITIAL = -1;
     public static final int DAYS_IN_WEEK = 7;
     protected String[] mWeekDays;
 
     @IntDef({SUNDAY_SHIFT, SATURDAY_SHIFT, MONDAY_SHIFT})
-    public @interface PossibleWeekShift {}
+    @interface PossibleWeekShift {
+    }
+
     public static final int SUNDAY_SHIFT = 0;
     public static final int SATURDAY_SHIFT = 1;
     public static final int MONDAY_SHIFT = 6;
     protected int mFirstDayOfTheWeekShift = SUNDAY_SHIFT;
 
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public static class DayMetadata {
         int year;
         int month;
@@ -83,10 +87,7 @@ public abstract class CalendarView extends ViewGroup implements GestureDetector.
 
             DayMetadata that = (DayMetadata) o;
 
-            if (year != that.year) return false;
-            if (month != that.month) return false;
-            return day == that.day;
-
+            return year == that.year && month == that.month && day == that.day;
         }
 
         @Override
@@ -98,30 +99,31 @@ public abstract class CalendarView extends ViewGroup implements GestureDetector.
         }
     }
 
-    final Paint mActiveTextColor;
-    final Paint mSeparationPaint;
-    final Paint mInactiveTextColor;
-    final Paint mInactiveBackgroundColor;
-    final Paint mActiveBackgroundColor;
-    final Paint mSelectedBackgroundColor;
-    final Drawable mCurrentDayDrawable;
-    final float mDecorationSize;
-    final float mBetweenSiblingsPadding;
-    float mMaterialLeftRightPadding;
-    boolean mShowOverflow;
-    boolean mIgnoreMaterialGrid;
-    boolean mSeparateDaysVertically;
-    final Paint mOverflowPaint;
-    final float mOverflowHeight;
-    final float mTextSize;
-    final Paint mCurrentDayTextColor;
-    final float dp1;
-    final float dp4;
-    final Rect mReusableTextBound = new Rect();
-    final float mEndOfHeaderWithoutWeekday;
-    final float mEndOfHeaderWithWeekday;
-    final int mSingleLetterWidth;
-    final int mSingleLetterHeight;
+    protected final Paint mActiveTextColor;
+    protected final Paint mSeparationPaint;
+    protected final Paint mInactiveTextColor;
+    protected final Paint mInactiveBackgroundColor;
+    protected final Paint mActiveBackgroundColor;
+    protected final Paint mSelectedBackgroundColor;
+    protected final Drawable mCurrentDayDrawable;
+    protected final float mDecorationSize;
+    protected final float mBetweenSiblingsPadding;
+    protected float mMaterialLeftRightPadding;
+    protected boolean mShowOverflow;
+    protected boolean mIgnoreMaterialGrid;
+    protected boolean mSeparateDaysVertically;
+    protected final Paint mOverflowPaint;
+    protected final float mOverflowHeight;
+    protected final float mTextSize;
+    protected final Paint mCurrentDayTextColor;
+    protected final float dp1;
+    protected final float dp4;
+    protected final Rect mReusableTextBound = new Rect();
+    protected final float mEndOfHeaderWithoutWeekday;
+    protected final float mEndOfHeaderWithWeekday;
+    protected final int mSingleLetterWidth;
+    protected final int mSingleLetterHeight;
+
     public CalendarView(Context context, AttributeSet attrs) {
         super(context, attrs);
 
@@ -196,7 +198,7 @@ public abstract class CalendarView extends ViewGroup implements GestureDetector.
         mSingleLetterWidth = mReusableTextBound.width();
         mSingleLetterHeight = mReusableTextBound.height();
         if (mDecorationSize > 0) {
-            mEndOfHeaderWithoutWeekday = mBetweenSiblingsPadding * 2+ mDecorationSize;
+            mEndOfHeaderWithoutWeekday = mBetweenSiblingsPadding * 2 + mDecorationSize;
             mEndOfHeaderWithWeekday = mBetweenSiblingsPadding * 3 + mDecorationSize + mSingleLetterHeight;
         } else {
             mEndOfHeaderWithoutWeekday = mBetweenSiblingsPadding * 2 + mSingleLetterHeight;
@@ -212,6 +214,34 @@ public abstract class CalendarView extends ViewGroup implements GestureDetector.
         mWeekDays = getWeekdaysForShift(mFirstDayOfTheWeekShift);
     }
 
+    protected void recalculateCells(int w, int h, RectF[] dayCells, int rowCount) {
+        int firstRowExtraHeight = (int) (mSingleLetterHeight + mBetweenSiblingsPadding);
+
+        int COLS = 7;
+        float widthStep = ( w - mMaterialLeftRightPadding * 2 ) / (float) COLS;
+        float heightStep = ( h - firstRowExtraHeight ) / (float) rowCount;
+
+        for (int col = 0; col < COLS; col++) {
+            float lastBottom = INITIAL;
+            for (int row = 0; row < rowCount; row++) {
+                if (row == 0) {
+                    lastBottom = (heightStep + firstRowExtraHeight);
+                    dayCells[row * COLS  + col] = new RectF(widthStep * col + mMaterialLeftRightPadding,
+                            heightStep * row,
+                            widthStep * (col + 1) + mMaterialLeftRightPadding,
+                            lastBottom);
+                } else {
+                    float newBottom = (lastBottom + heightStep);
+                    dayCells[row * COLS  + col] = new RectF(widthStep * col + mMaterialLeftRightPadding,
+                            lastBottom,
+                            widthStep * (col + 1) + mMaterialLeftRightPadding,
+                            newBottom);
+                    lastBottom = newBottom;
+                }
+            }
+        }
+    }
+
     private void recalculatePadding() {
         if (mIgnoreMaterialGrid) {
             mMaterialLeftRightPadding = 0f;
@@ -221,14 +251,20 @@ public abstract class CalendarView extends ViewGroup implements GestureDetector.
     }
 
     // Utils for calendar
+    @SuppressWarnings("unused")
     public static int getCalendarDayForShift(@PossibleWeekShift int weekShift) {
         int dayForShift;
         switch (weekShift) {
             case SUNDAY_SHIFT: {
                 dayForShift = Calendar.SUNDAY;
                 break;
-            } case SATURDAY_SHIFT: {
+            }
+            case SATURDAY_SHIFT: {
                 dayForShift = Calendar.SATURDAY;
+                break;
+            }
+            case MONDAY_SHIFT: {
+                dayForShift = Calendar.MONDAY;
                 break;
             } default: {
                 dayForShift = Calendar.MONDAY;
@@ -267,13 +303,16 @@ public abstract class CalendarView extends ViewGroup implements GestureDetector.
 
     // Common interface
     public abstract void setFirstDayOfTheWeek(int firstDayOfTheWeekShift);
+
     public int getFirstDayOfTheWeek() {
         return mFirstDayOfTheWeekShift;
     }
 
+    @SuppressWarnings("unused")
     public boolean hasDayVertialSeparation() {
         return mSeparateDaysVertically;
     }
+
     public void setSeparateDaysVertically(boolean separateDaysVertically) {
         if (separateDaysVertically != mSeparateDaysVertically) {
             mSeparateDaysVertically = separateDaysVertically;
@@ -287,13 +326,17 @@ public abstract class CalendarView extends ViewGroup implements GestureDetector.
             invalidate();
         }
     }
+
+    @SuppressWarnings("unused")
     public boolean isOverflowShown() {
         return mShowOverflow;
     }
 
+    @SuppressWarnings("unused")
     public boolean isIgnoringMaterialGrid() {
         return mIgnoreMaterialGrid;
     }
+
     public void setIgnoreMaterialGrid(boolean ignoreMaterialGrid) {
         if (ignoreMaterialGrid != mIgnoreMaterialGrid) {
             mIgnoreMaterialGrid = ignoreMaterialGrid;
@@ -305,29 +348,41 @@ public abstract class CalendarView extends ViewGroup implements GestureDetector.
     public abstract void removeAllContent();
 
     public abstract void setCurrentDay(Calendar currentDay);
+
+    @SuppressWarnings("unused")
     public abstract void setCurrentDay(DayMetadata dayMetadata);
+
+    @SuppressWarnings("unused")
     public abstract void setSelectedDay(Calendar selectedDay);
+
     public abstract void setSelectedDay(DayMetadata dayMetadata);
 
     public abstract DayMetadata getSelectedDay();
+
     public abstract int getSelectedCell();
 
     public abstract void addViewToDay(DayMetadata dayMetadata, View viewToAppend);
+
     public abstract void addViewToCell(int cellNumber, View viewToAppend);
 
     public abstract ArrayList<View> getDayContent(DayMetadata day);
+
     public abstract void setDayContent(DayMetadata day, ArrayList<View> newContent);
 
     public abstract ArrayList<View> getCellContent(int cellNumber);
+
     public abstract void setCellContent(int cellNumber, ArrayList<View> newContent);
 
     // Interaction
-    GestureDetectorCompat mDetector;
-    DaySelectionListener mDaySelectionListener;
+    protected GestureDetectorCompat mDetector;
+    protected DaySelectionListener mDaySelectionListener;
+
     public interface DaySelectionListener {
         void onTapEnded(CalendarView calendarView, DayMetadata day);
+
         void onLongClick(CalendarView calendarView, DayMetadata day);
     }
+
     public void setDaySelectedListener(DaySelectionListener listener) {
         this.mDaySelectionListener = listener;
     }
@@ -340,23 +395,28 @@ public abstract class CalendarView extends ViewGroup implements GestureDetector.
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
-        if (DEBUG) Log.d(toString() + "@" + System.identityHashCode(this), "onSizeChanged");
+        if (DEBUG) Log.d(toString() + "@" + System.identityHashCode(this),
+             "onSizeChanged: " + "w: " + w + " h: " + h + " oldw: " + oldw + " oldh" + oldh);
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        if (DEBUG) Log.d(toString() + "@" + System.identityHashCode(this), "onDraw");
+        if (DEBUG) Log.d(toString() + "@" + System.identityHashCode(this),
+            "onDraw: " + canvas);
     }
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
-        if (DEBUG) Log.d(toString() + "@" + System.identityHashCode(this), "onLayout");
+        if (DEBUG) Log.d(toString() + "@" + System.identityHashCode(this),
+            "onLayout: " + " c: " + changed + " l: " + l + " t: " + t
+            + " r: " + r + " b: " + b);
     }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        if (DEBUG) Log.d(toString() + "@" + System.identityHashCode(this), "onMeasure");
+        if (DEBUG) Log.d(toString() + "@" + System.identityHashCode(this),
+                "onMeasure: " + "w: " + widthMeasureSpec + " h: " + heightMeasureSpec);
     }
 }

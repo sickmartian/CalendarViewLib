@@ -19,10 +19,8 @@ import java.util.Calendar;
 /**
  * Created by sickmartian on 11/24/2015.
  */
-public class MonthView extends CalendarView
-        implements GestureDetector.OnGestureListener {
-
-    private static final int INITIAL = -1;
+public class MonthView extends CalendarView implements GestureDetector.OnGestureListener {
+    public static final int ROWS = 6;
     public static final int DAYS_IN_GRID = 42;
     private static final String SINGLE_DIGIT_DAY_WIDTH_TEMPLATE = "7";
     private static final String DOUBLE_DIGIT_DAY_WIDTH_TEMPLATE = "30";
@@ -63,7 +61,7 @@ public class MonthView extends CalendarView
         // Get last day of the week
         mLastDayOfMonth = cal.getActualMaximum(Calendar.DAY_OF_MONTH);
         cal.set(mYear, mMonth, mLastDayOfMonth);
-        firstDayInWeekOfMonth = ( firstDayInWeekOfMonth + mFirstDayOfTheWeekShift ) % 7;
+        firstDayInWeekOfMonth = (firstDayInWeekOfMonth + mFirstDayOfTheWeekShift) % DAYS_IN_WEEK;
 
         cal.add(Calendar.MONTH, -1);
         cal.set(Calendar.DATE, 1);
@@ -73,7 +71,7 @@ public class MonthView extends CalendarView
         for (int i = 0; i < DAYS_IN_GRID; i++) {
             if (i < firstDayInWeekOfMonth) {
                 day = lastDayOfLastMonth - firstDayInWeekOfMonth + i + 1;
-            } else if ( i < firstDayInWeekOfMonth + mLastDayOfMonth ){
+            } else if (i < firstDayInWeekOfMonth + mLastDayOfMonth) {
                 day = i - firstDayInWeekOfMonth + 1;
                 if (mFirstCellOfMonth == INITIAL) {
                     mFirstCellOfMonth = i;
@@ -330,55 +328,31 @@ public class MonthView extends CalendarView
     // View methods
     int mLastKnownWidth;
     int mLastKnownHeight;
+
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-        recalculateCells(w, h);
+        super.onSizeChanged(w, h, oldw, oldh);
+
         mLastKnownWidth = w;
         mLastKnownHeight = h;
     }
 
-    public void recalculateCells(int w, int h) {
-        int firstRowExtraHeight = (int) (mSingleLetterHeight + mBetweenSiblingsPadding);
-
-        int COLS = 7;
-        int ROWS = 6;
-        float widthStep = ( w - mMaterialLeftRightPadding * 2 ) / (float) COLS;
-        float heightStep = ( h - firstRowExtraHeight ) / (float) ROWS;
-
-        for (int col = 0; col < COLS; col++) {
-            float lastBottom = INITIAL;
-            for (int row = 0; row < ROWS; row++) {
-                if (row == 0) {
-                    lastBottom = (heightStep + firstRowExtraHeight);
-                    mDayCells[row * COLS  + col] = new RectF(widthStep * col + mMaterialLeftRightPadding,
-                            heightStep * row,
-                            widthStep * (col + 1) + mMaterialLeftRightPadding,
-                            lastBottom);
-                } else {
-                    float newBottom = (lastBottom + heightStep);
-                    mDayCells[row * COLS  + col] = new RectF(widthStep * col + mMaterialLeftRightPadding,
-                            lastBottom,
-                            widthStep * (col + 1) + mMaterialLeftRightPadding,
-                            newBottom);
-                    lastBottom = newBottom;
-                }
-            }
-        }
-    }
-
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+
         // We have a fixed size, we can omit some child views if they don't fit later
         int w = resolveSizeAndState((int) (
-                (mSingleLetterWidth + mBetweenSiblingsPadding ) // Single column min size
-                        * 2 // For chars in days of the month
-                        * DAYS_IN_WEEK),
+                        (mSingleLetterWidth + mBetweenSiblingsPadding) // Single column min size
+                                * 2 // For chars in days of the month
+                                * DAYS_IN_WEEK),
                 widthMeasureSpec, 0);
         int h = resolveSizeAndState((int) ((mBetweenSiblingsPadding * 4 + mSingleLetterHeight) * DAYS_IN_WEEK), heightMeasureSpec, 0);
 
         setMeasuredDimension(w, h);
 
-        // Measure child layouts if we have
+        // Measure child layouts if we have any
+        recalculateCells(w, h, mDayCells, ROWS);
         if (mDayCells.length == 0 || mDayCells[0] == null) return;
 
         float alreadyUsedTop = mEndOfHeaderWithWeekday;
@@ -407,7 +381,7 @@ public class MonthView extends CalendarView
         float topOffset;
         for (int i = 0; i < DAYS_IN_GRID; i++) {
             ArrayList<View> childArrayForDay = mChildInDays.get(i);
-            if (i >= 7) {
+            if (i >= DAYS_IN_WEEK) {
                 topOffset = mEndOfHeaderWithoutWeekday;
             } else {
                 topOffset = mEndOfHeaderWithWeekday;
@@ -447,6 +421,8 @@ public class MonthView extends CalendarView
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
+        if (getWidth() == 0 || getHeight() == 0) return; // Never got measured, nothing to draw
+
         canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
 
         // Weekdays and day numbers
@@ -454,7 +430,7 @@ public class MonthView extends CalendarView
         for (int i = 0; i < DAYS_IN_GRID; i++) {
             // Cell in month
             if (i >= mFirstCellOfMonth && i <= lastCellOfMonth) {
-                int day =  i - mFirstCellOfMonth + 1;
+                int day = i - mFirstCellOfMonth + 1;
 
                 drawBackgroundForCell(canvas, i,
                         day == mSelectedDay, mSelectedBackgroundColor, mActiveBackgroundColor);
@@ -464,7 +440,7 @@ public class MonthView extends CalendarView
 
                     // Decoration
                     float topOffset = mBetweenSiblingsPadding;
-                    if (i < 7) {
+                    if (i < DAYS_IN_WEEK) {
                         topOffset += mBetweenSiblingsPadding + mSingleLetterHeight;
                     }
                     mCurrentDayDrawable.setBounds(
@@ -518,9 +494,9 @@ public class MonthView extends CalendarView
 
         if (!mIgnoreMaterialGrid) {
             // Calculate padding for this cell
-            float additionalLeft = 0f;
-            float additionalRight = 0f;
-            int cellMod = cellNumber % 7;
+            float additionalLeft;
+            float additionalRight;
+            int cellMod = cellNumber % DAYS_IN_WEEK;
             if (cellMod == 0) {
                 additionalLeft = mMaterialLeftRightPadding * -1;
                 additionalRight = 0;
@@ -577,7 +553,7 @@ public class MonthView extends CalendarView
                                     Paint mCurrentWeekDayTextColor) {
         float topOffset = 0;
         // Weekday
-        if (cellNumber < 7) {
+        if (cellNumber < DAYS_IN_WEEK) {
             mCurrentWeekDayTextColor.getTextBounds("S", 0, 1, mReusableTextBound);
 
             int decorationLeftOffset = 0;
@@ -717,7 +693,7 @@ public class MonthView extends CalendarView
         setSelectedDay(myOwnState.mSelectedDay);
         mLastKnownWidth = myOwnState.mLastKnownWidth;
         mLastKnownHeight = myOwnState.mLastKnownHeight;
-        recalculateCells(mLastKnownWidth, mLastKnownHeight);
+        recalculateCells(mLastKnownWidth, mLastKnownHeight, mDayCells, ROWS);
     }
 
     private static class MyOwnState extends BaseSavedState {
@@ -728,11 +704,11 @@ public class MonthView extends CalendarView
         int mLastKnownWidth;
         int mLastKnownHeight;
 
-        public MyOwnState(Parcelable superState) {
+        MyOwnState(Parcelable superState) {
             super(superState);
         }
 
-        public MyOwnState(Parcel in) {
+        MyOwnState(Parcel in) {
             super(in);
             mYear = in.readInt();
             mMonth = in.readInt();
@@ -754,14 +730,15 @@ public class MonthView extends CalendarView
         }
 
         public static final Parcelable.Creator<MyOwnState> CREATOR =
-            new Parcelable.Creator<MyOwnState>() {
-                public MyOwnState createFromParcel(Parcel in) {
-                    return new MyOwnState(in);
-                }
-                public MyOwnState[] newArray(int size) {
-                    return new MyOwnState[size];
-                }
-            };
+                new Parcelable.Creator<MyOwnState>() {
+                    public MyOwnState createFromParcel(Parcel in) {
+                        return new MyOwnState(in);
+                    }
+
+                    public MyOwnState[] newArray(int size) {
+                        return new MyOwnState[size];
+                    }
+                };
     }
 
 
