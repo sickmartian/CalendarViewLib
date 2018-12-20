@@ -464,38 +464,22 @@ public class MonthView extends CalendarView implements GestureDetector.OnGesture
     }
 
     protected void drawBackgrounds(Canvas canvas, RectF[] dayCells,
-                                   int selectedCell, int firstActiveCell, int lastActiveCell) {
+                                   int firstActiveCell, int lastActiveCell) {
         int activationRow = firstActiveCell / DAYS_IN_WEEK;
         int deactivationRow = lastActiveCell / DAYS_IN_WEEK;
 
         for (int row = 0; row < dayCells.length / DAYS_IN_WEEK; row++) {
             int firstCellInRow = row * DAYS_IN_WEEK;
             int lastCellInRow = firstCellInRow + (DAYS_IN_WEEK - 1);
-            if (row < activationRow) {
-                // Whole active row
-                drawBlock(canvas, mInactiveBackgroundColor, BLOCK.COMPLETE,
-                        dayCells[firstCellInRow].left,
-                        dayCells[firstCellInRow].top,
-                        dayCells[lastCellInRow].right,
-                        dayCells[lastCellInRow].bottom);
-            } else if (row == activationRow) {
-                // If there is at least one inactive cell in the row, draw that block
-                boolean anyInactive = firstActiveCell > firstCellInRow;
-                if (anyInactive) {
-                    drawBlock(canvas, mInactiveBackgroundColor, BLOCK.LEFT,
-                            dayCells[firstCellInRow].left,
-                            dayCells[firstCellInRow].top,
-                            dayCells[firstActiveCell - 1].right,
-                            dayCells[lastCellInRow].bottom);
-                }
-                // Draw active
-                drawBlock(canvas, mActiveBackgroundColor, anyInactive ? BLOCK.RIGHT : BLOCK.COMPLETE,
+            if (row == activationRow) {
+                // If there is at least one inactive cell in the row, skip that block
+                drawBlock(canvas, mActiveBackgroundColor,
+                            firstActiveCell > firstCellInRow ? BLOCK.RIGHT : BLOCK.COMPLETE,
                         dayCells[firstActiveCell].left,
                         dayCells[firstCellInRow].top,
                         dayCells[lastCellInRow].right,
                         dayCells[lastCellInRow].bottom);
-            } else if (row < deactivationRow) {
-                // Whole active row
+            } else if (row < deactivationRow) { // Whole active row
                 drawBlock(canvas, mActiveBackgroundColor, BLOCK.COMPLETE,
                         dayCells[firstCellInRow].left, dayCells[firstCellInRow].top,
                         dayCells[lastCellInRow].right, dayCells[lastCellInRow].bottom);
@@ -509,30 +493,7 @@ public class MonthView extends CalendarView implements GestureDetector.OnGesture
                             dayCells[lastActiveCell].right,
                             dayCells[lastCellInRow].bottom);
                 }
-                // Draw active
-                drawBlock(canvas, mInactiveBackgroundColor, anyActive ? BLOCK.RIGHT : BLOCK.COMPLETE,
-                        dayCells[lastActiveCell + 1].left,
-                        dayCells[lastCellInRow].top,
-                        dayCells[lastCellInRow].right,
-                        dayCells[lastCellInRow].bottom);
-            } else {
-                // Whole inactive row
-                drawBlock(canvas, mInactiveBackgroundColor, BLOCK.COMPLETE,
-                        dayCells[firstCellInRow].left,
-                        dayCells[firstCellInRow].top,
-                        dayCells[lastCellInRow].right,
-                        dayCells[lastCellInRow].bottom);
             }
-        }
-
-
-        // And then the selection with padding to the background (so the background shows on the
-        // left and right extremes):
-        if (selectedCell >= 0) {
-            canvas.drawRect(dayCells[selectedCell].left,
-                    dayCells[selectedCell].top,
-                    dayCells[selectedCell].right,
-                    dayCells[selectedCell].bottom, mSelectedBackgroundColor);
         }
     }
 
@@ -542,11 +503,13 @@ public class MonthView extends CalendarView implements GestureDetector.OnGesture
 
         if (getWidth() == 0 || getHeight() == 0) return; // Never got measured, nothing to draw
 
-        canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+        canvas.drawPaint(mInactiveBackgroundColor);
 
         int lastCellOfMonth = mFirstCellOfMonth + mLastDayOfMonth - 1;
-        drawBackgrounds(canvas, mDayCells, mSelectedDay == INITIAL ? INITIAL : mSelectedDay + mFirstCellOfMonth - 1,
-                mFirstCellOfMonth, lastCellOfMonth);
+        drawBackgrounds(canvas, mDayCells, mFirstCellOfMonth, lastCellOfMonth);
+        drawSelectedCell(canvas, mDayCells, mSelectedDay == INITIAL ? INITIAL :
+                mSelectedDay + mFirstCellOfMonth - 1);
+
 
         // Weekdays and day numbers
         for (int i = 0; i < DAYS_IN_GRID; i++) {

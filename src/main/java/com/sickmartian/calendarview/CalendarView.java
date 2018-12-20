@@ -349,6 +349,17 @@ public abstract class CalendarView extends ViewGroup implements GestureDetector.
                 mCurrentDayTextColor);
     }
 
+    protected void drawSelectedCell(Canvas canvas, RectF[] dayCells, int selectedCell) {
+        // And then the selection with padding to the background (so the background shows on the
+        // left and right extremes):
+        if (selectedCell > INITIAL) {
+            canvas.drawRect(dayCells[selectedCell].left,
+                    dayCells[selectedCell].top,
+                    dayCells[selectedCell].right,
+                    dayCells[selectedCell].bottom, mSelectedBackgroundColor);
+        }
+    }
+
     private void recalculatePadding() {
         if (mIgnoreMaterialGrid) {
             mMaterialLeftRightPadding = 0f;
