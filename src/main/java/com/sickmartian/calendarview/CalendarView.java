@@ -28,7 +28,9 @@ import java.util.TimeZone;
  */
 public abstract class CalendarView extends ViewGroup implements GestureDetector.OnGestureListener {
     public static boolean DEBUG = false;
-
+    private static final String SINGLE_DIGIT_DAY_WIDTH_TEMPLATE = "7";
+    private static final String DOUBLE_DIGIT_DAY_WIDTH_TEMPLATE = "30";
+    private static final String SPECIAL_DAY_THAT_NEEDS_WORKAROUND = "31";
     protected static final int INITIAL = -1;
     public static final int DAYS_IN_WEEK = 7;
     protected String[] mWeekDays;
@@ -42,8 +44,12 @@ public abstract class CalendarView extends ViewGroup implements GestureDetector.
     public static final int MONDAY_SHIFT = 6;
     protected int mFirstDayOfTheWeekShift = SUNDAY_SHIFT;
 
+    public interface DayString {
+        String getDayString();
+    }
+
     @SuppressWarnings({"unused", "WeakerAccess"})
-    public static class DayMetadata {
+    public static class DayMetadata implements DayString {
         int year;
         int month;
         int day;
@@ -78,6 +84,11 @@ public abstract class CalendarView extends ViewGroup implements GestureDetector.
         public void setDay(int day) {
             this.day = day;
             this.dayString = Integer.toString(day);
+        }
+
+        @Override
+        public String getDayString() {
+            return dayString;
         }
 
         @Override
@@ -240,6 +251,113 @@ public abstract class CalendarView extends ViewGroup implements GestureDetector.
                 }
             }
         }
+    }
+
+    protected void drawBackgroundForCell(Canvas canvas, int cellNumber, RectF[] dayCells,
+                                         boolean selected,
+                                         Paint selectedBackgroundColor,
+                                         Paint backgroundColor) {
+        // Just paint with the correct color if we are ignoring the material guidelines
+        if (mIgnoreMaterialGrid) {
+            canvas.drawRect(dayCells[cellNumber].left,
+                    dayCells[cellNumber].top,
+                    dayCells[cellNumber].right,
+                    dayCells[cellNumber].bottom,
+                    selected ? selectedBackgroundColor : backgroundColor);
+            return;
+        }
+
+        // Calculate padding for this cell
+        int cellMod = cellNumber % DAYS_IN_WEEK;
+        float additionalLeft = cellMod == 0 ? mMaterialLeftRightPadding * -1 : 0;
+        float additionalRight = cellMod == 6 ? mMaterialLeftRightPadding : 0;
+
+        // Just paint unselected
+        canvas.drawRect(dayCells[cellNumber].left + additionalLeft,
+                dayCells[cellNumber].top,
+                dayCells[cellNumber].right + additionalRight,
+                dayCells[cellNumber].bottom, backgroundColor);
+
+        // And then the selection with padding to the background (so the background shows on the
+        // left and right extremes):
+        if (selected) {
+            canvas.drawRect(dayCells[cellNumber].left,
+                    dayCells[cellNumber].top,
+                    dayCells[cellNumber].right,
+                    dayCells[cellNumber].bottom, selectedBackgroundColor);
+        }
+    }
+
+    protected void drawOverflow(Canvas canvas, ArrayList<Integer> mCellsWithOverflow, RectF[] dayCells) {
+        // Overflow
+        if (mShowOverflow) {
+            for (int cellWithOverflow : mCellsWithOverflow) {
+                canvas.drawRect(dayCells[cellWithOverflow].left, dayCells[cellWithOverflow].bottom - mOverflowHeight,
+                        dayCells[cellWithOverflow].right, dayCells[cellWithOverflow].bottom, mOverflowPaint);
+            }
+        }
+    }
+
+    protected void drawVerticalSeparation(Canvas canvas, RectF[] dayCells) {
+        // Separation
+        if (mSeparateDaysVertically) {
+            canvas.drawLine(dayCells[0].right, 0, dayCells[0].right, getHeight(), mSeparationPaint);
+            canvas.drawLine(dayCells[1].right, 0, dayCells[1].right, getHeight(), mSeparationPaint);
+            canvas.drawLine(dayCells[2].right, 0, dayCells[2].right, getHeight(), mSeparationPaint);
+            canvas.drawLine(dayCells[3].right, 0, dayCells[3].right, getHeight(), mSeparationPaint);
+            canvas.drawLine(dayCells[4].right, 0, dayCells[4].right, getHeight(), mSeparationPaint);
+            canvas.drawLine(dayCells[5].right, 0, dayCells[5].right, getHeight(), mSeparationPaint);
+        }
+    }
+
+    protected void drawDayTextsInCell(Canvas canvas, int cellNumber, RectF[] dayCells,
+                                      Paint mCurrentDayTextColor,
+                                      Paint mCurrentWeekDayTextColor,
+                                      DayString[] dayStrings) {
+        float topOffset = 0;
+        // Weekday
+        if (cellNumber < DAYS_IN_WEEK) {
+            mCurrentWeekDayTextColor.getTextBounds("S", 0, 1, mReusableTextBound);
+
+            int decorationLeftOffset = 0;
+            if (mDecorationSize > 0) {
+                decorationLeftOffset = (int) ((mDecorationSize - mReusableTextBound.width()) / 2);
+            }
+
+            canvas.drawText(mWeekDays[cellNumber],
+                    dayCells[cellNumber].left + mBetweenSiblingsPadding + decorationLeftOffset,
+                    dayCells[cellNumber].top + mBetweenSiblingsPadding + mReusableTextBound.height(),
+                    mCurrentWeekDayTextColor);
+            topOffset = mBetweenSiblingsPadding + mReusableTextBound.height();
+        }
+
+        // Day number
+        // Check we have something to draw first.
+        if (dayStrings == null || dayStrings.length == 0 || dayStrings[0] == null) return;
+
+        // So the days align between each other inside the decoration, we use
+        // the same number to calculate the length of the text inside the decoration
+        String templateDayText;
+        if (dayStrings[cellNumber].getDayString().length() < 2) {
+            templateDayText = SINGLE_DIGIT_DAY_WIDTH_TEMPLATE;
+        } else if (dayStrings[cellNumber].getDayString().equals(SPECIAL_DAY_THAT_NEEDS_WORKAROUND)) {
+            templateDayText = dayStrings[cellNumber].getDayString();
+        } else {
+            templateDayText = DOUBLE_DIGIT_DAY_WIDTH_TEMPLATE;
+        }
+        mCurrentDayTextColor.getTextBounds(templateDayText, 0, templateDayText.length(), mReusableTextBound);
+
+        int decorationLeftOffset = 0;
+        int decorationTopOffset = 0;
+        if (mDecorationSize > 0) {
+            decorationLeftOffset = (int) ((mDecorationSize - mReusableTextBound.width()) / 2);
+            decorationTopOffset = (int) ((mDecorationSize - mReusableTextBound.height()) / 2);
+        }
+
+        canvas.drawText(dayStrings[cellNumber].getDayString(),
+                dayCells[cellNumber].left + mBetweenSiblingsPadding + decorationLeftOffset,
+                dayCells[cellNumber].top + mBetweenSiblingsPadding + mReusableTextBound.height() + decorationTopOffset + topOffset,
+                mCurrentDayTextColor);
     }
 
     private void recalculatePadding() {

@@ -22,9 +22,6 @@ import java.util.Calendar;
 public class WeekView extends CalendarView implements GestureDetector.OnGestureListener {
     public static final int ROWS = 1;
     public static final int DAYS_IN_GRID = 7;
-    private static final String SINGLE_DIGIT_DAY_WIDTH_TEMPLATE = "7";
-    private static final String DOUBLE_DIGIT_DAY_WIDTH_TEMPLATE = "30";
-    private static final String SPECIAL_DAY_THAT_NEEDS_WORKAROUND = "31";
 
     // User set state
     ArrayList<ArrayList<View>> mChildInDays;
@@ -406,7 +403,8 @@ public class WeekView extends CalendarView implements GestureDetector.OnGestureL
         // Weekdays and day numbers
         float topOffset = mBetweenSiblingsPadding * 2 + mSingleLetterHeight;
         for (int i = 0; i < DAYS_IN_GRID; i++) {
-            drawBackgroundForCell(canvas, i, i == mSelectedCell, mSelectedBackgroundColor, mActiveBackgroundColor);
+            drawBackgroundForCell(canvas, i, mDayCells, i == mSelectedCell,
+                    mSelectedBackgroundColor, mActiveBackgroundColor);
 
             // Current day might have a decoration
             if (mCurrentCell == i && mCurrentDayDrawable != null) {
@@ -419,138 +417,15 @@ public class WeekView extends CalendarView implements GestureDetector.OnGestureL
                         (int) (mDayCells[i].top + mDecorationSize + topOffset));
                 mCurrentDayDrawable.draw(canvas);
 
-                drawDayTextsInCell(canvas, i, mCurrentDayTextColor, mActiveTextColor);
+                drawDayTextsInCell(canvas, i, mDayCells, mCurrentDayTextColor, mActiveTextColor, mDayMetadata);
             } else {
-                drawDayTextsInCell(canvas, i, mActiveTextColor, mActiveTextColor);
-            }
-
-        }
-
-        // Overflow
-        if (mShowOverflow) {
-            for (int cellWithOverflow : mCellsWithOverflow) {
-                canvas.drawRect(mDayCells[cellWithOverflow].left, mDayCells[cellWithOverflow].bottom - mOverflowHeight,
-                        mDayCells[cellWithOverflow].right, mDayCells[cellWithOverflow].bottom, mOverflowPaint);
+                drawDayTextsInCell(canvas, i, mDayCells, mActiveTextColor, mActiveTextColor, mDayMetadata);
             }
         }
-        // Separation
-        if (mSeparateDaysVertically) {
-            canvas.drawLine(mDayCells[0].right, 0, mDayCells[0].right, getHeight(), mSeparationPaint);
-            canvas.drawLine(mDayCells[1].right, 0, mDayCells[1].right, getHeight(), mSeparationPaint);
-            canvas.drawLine(mDayCells[2].right, 0, mDayCells[2].right, getHeight(), mSeparationPaint);
-            canvas.drawLine(mDayCells[3].right, 0, mDayCells[3].right, getHeight(), mSeparationPaint);
-            canvas.drawLine(mDayCells[4].right, 0, mDayCells[4].right, getHeight(), mSeparationPaint);
-            canvas.drawLine(mDayCells[5].right, 0, mDayCells[5].right, getHeight(), mSeparationPaint);
-        }
-    }
 
-    private void drawBackgroundForCell(Canvas canvas, int cellNumber,
-                                       boolean selected,
-                                       Paint selectedBackgroundColor,
-                                       Paint backgroundColor) {
+        drawOverflow(canvas, mCellsWithOverflow, mDayCells);
 
-        if (!mIgnoreMaterialGrid) {
-            // Calculate padding for this cell
-            float additionalLeft;
-            float additionalRight;
-            if (cellNumber == 0) {
-                additionalLeft = mMaterialLeftRightPadding * -1;
-                additionalRight = 0;
-            } else if (cellNumber == 6) {
-                additionalLeft = 0;
-                additionalRight = mMaterialLeftRightPadding;
-            } else {
-                additionalLeft = 0;
-                additionalRight = 0;
-            }
-
-            if (!selected) {
-                // Just paint unselected
-                RectF backgroundRect = new RectF(
-                        mDayCells[cellNumber].left + additionalLeft,
-                        mDayCells[cellNumber].top,
-                        mDayCells[cellNumber].right + additionalRight,
-                        mDayCells[cellNumber].bottom);
-                canvas.drawRect(backgroundRect, backgroundColor);
-            } else {
-                // If selected, we still paint the background
-                RectF backgroundRect = new RectF(
-                        mDayCells[cellNumber].left + additionalLeft,
-                        mDayCells[cellNumber].top,
-                        mDayCells[cellNumber].right + additionalRight,
-                        mDayCells[cellNumber].bottom);
-                canvas.drawRect(backgroundRect, backgroundColor);
-                // And then the selection with padding to the background:
-                backgroundRect.left = mDayCells[cellNumber].left;
-                backgroundRect.right = mDayCells[cellNumber].right;
-                canvas.drawRect(backgroundRect, selectedBackgroundColor);
-            }
-        } else {
-            // Just paint with the correct color
-            Paint color;
-            if (selected) {
-                color = selectedBackgroundColor;
-            } else {
-                color = backgroundColor;
-            }
-            RectF backgroundRect = new RectF(
-                    mDayCells[cellNumber].left,
-                    mDayCells[cellNumber].top,
-                    mDayCells[cellNumber].right,
-                    mDayCells[cellNumber].bottom);
-            canvas.drawRect(backgroundRect, color);
-        }
-
-    }
-
-    private void drawDayTextsInCell(Canvas canvas,
-                                    int cellNumber,
-                                    Paint mCurrentDayTextColor,
-                                    Paint mCurrentWeekDayTextColor) {
-        float topOffset = 0;
-        // Weekday
-        if (cellNumber < DAYS_IN_WEEK) {
-            mCurrentWeekDayTextColor.getTextBounds("S", 0, 1, mReusableTextBound);
-
-            int decorationLeftOffset = 0;
-            if (mDecorationSize > 0) {
-                decorationLeftOffset = (int) ((mDecorationSize - mReusableTextBound.width()) / 2);
-            }
-
-            canvas.drawText(mWeekDays[cellNumber],
-                    mDayCells[cellNumber].left + mBetweenSiblingsPadding + decorationLeftOffset,
-                    mDayCells[cellNumber].top + mBetweenSiblingsPadding + mReusableTextBound.height(),
-                    mCurrentWeekDayTextColor);
-            topOffset = mBetweenSiblingsPadding + mReusableTextBound.height();
-        }
-
-        // Day number
-        // Check we have something to draw first.
-        if (mDayMetadata == null || mDayMetadata.length == 0 || mDayMetadata[0] == null) return;
-
-        // So the days align between each other inside the decoration, we use
-        // the same number to calculate the length of the text inside the decoration
-        String templateDayText;
-        if (mDayMetadata[cellNumber].dayString.length() < 2) {
-            templateDayText = SINGLE_DIGIT_DAY_WIDTH_TEMPLATE;
-        } else if (mDayMetadata[cellNumber].dayString.equals(SPECIAL_DAY_THAT_NEEDS_WORKAROUND)) {
-            templateDayText = mDayMetadata[cellNumber].dayString;
-        } else {
-            templateDayText = DOUBLE_DIGIT_DAY_WIDTH_TEMPLATE;
-        }
-        mCurrentDayTextColor.getTextBounds(templateDayText, 0, templateDayText.length(), mReusableTextBound);
-
-        int decorationLeftOffset = 0;
-        int decorationTopOffset = 0;
-        if (mDecorationSize > 0) {
-            decorationLeftOffset = (int) ((mDecorationSize - mReusableTextBound.width()) / 2);
-            decorationTopOffset = (int) ((mDecorationSize - mReusableTextBound.height()) / 2);
-        }
-
-        canvas.drawText(mDayMetadata[cellNumber].dayString,
-                mDayCells[cellNumber].left + mBetweenSiblingsPadding + decorationLeftOffset,
-                mDayCells[cellNumber].top + mBetweenSiblingsPadding + mReusableTextBound.height() + decorationTopOffset + topOffset,
-                mCurrentDayTextColor);
+        drawVerticalSeparation(canvas, mDayCells);
     }
 
     // Interaction
