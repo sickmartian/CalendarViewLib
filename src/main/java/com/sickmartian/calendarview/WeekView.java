@@ -392,6 +392,26 @@ public class WeekView extends CalendarView implements GestureDetector.OnGestureL
         }
     }
 
+    private void drawBackgrounds(Canvas canvas, RectF[] dayCells, int selectedCell) {
+        for (int row = 0; row < dayCells.length / DAYS_IN_WEEK; row++) {
+            int firstCellInRow = row * DAYS_IN_WEEK;
+            int lastCellInRow = firstCellInRow + (DAYS_IN_WEEK - 1);
+            drawBlock(canvas, mActiveBackgroundColor, BLOCK.COMPLETE,
+                    dayCells[firstCellInRow].left, dayCells[firstCellInRow].top,
+                    dayCells[lastCellInRow].right, dayCells[lastCellInRow].bottom);
+        }
+
+
+        // And then the selection with padding to the background (so the background shows on the
+        // left and right extremes):
+        if (selectedCell > INITIAL) {
+            canvas.drawRect(dayCells[selectedCell].left,
+                    dayCells[selectedCell].top,
+                    dayCells[selectedCell].right,
+                    dayCells[selectedCell].bottom, mSelectedBackgroundColor);
+        }
+    }
+
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
@@ -400,15 +420,13 @@ public class WeekView extends CalendarView implements GestureDetector.OnGestureL
 
         canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
 
+        drawBackgrounds(canvas, mDayCells, mSelectedCell);
+
         // Weekdays and day numbers
         float topOffset = mBetweenSiblingsPadding * 2 + mSingleLetterHeight;
         for (int i = 0; i < DAYS_IN_GRID; i++) {
-            drawBackgroundForCell(canvas, i, mDayCells, i == mSelectedCell,
-                    mSelectedBackgroundColor, mActiveBackgroundColor);
-
             // Current day might have a decoration
             if (mCurrentCell == i && mCurrentDayDrawable != null) {
-
                 // Decoration
                 mCurrentDayDrawable.setBounds(
                         (int) (mDayCells[i].left + mBetweenSiblingsPadding),

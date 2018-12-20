@@ -253,39 +253,28 @@ public abstract class CalendarView extends ViewGroup implements GestureDetector.
         }
     }
 
-    protected void drawBackgroundForCell(Canvas canvas, int cellNumber, RectF[] dayCells,
-                                         boolean selected,
-                                         Paint selectedBackgroundColor,
-                                         Paint backgroundColor) {
+    protected enum BLOCK {
+        LEFT,
+        RIGHT,
+        COMPLETE
+    }
+
+    protected void drawBlock(Canvas canvas, Paint color, BLOCK block,
+                             float left, float top, float right, float bottom) {
         // Just paint with the correct color if we are ignoring the material guidelines
         if (mIgnoreMaterialGrid) {
-            canvas.drawRect(dayCells[cellNumber].left,
-                    dayCells[cellNumber].top,
-                    dayCells[cellNumber].right,
-                    dayCells[cellNumber].bottom,
-                    selected ? selectedBackgroundColor : backgroundColor);
+            canvas.drawRect(left, top, right, bottom, color);
             return;
         }
 
         // Calculate padding for this cell
-        int cellMod = cellNumber % DAYS_IN_WEEK;
-        float additionalLeft = cellMod == 0 ? mMaterialLeftRightPadding * -1 : 0;
-        float additionalRight = cellMod == 6 ? mMaterialLeftRightPadding : 0;
+        float additionalLeft = (BLOCK.LEFT.equals(block) || BLOCK.COMPLETE.equals(block)) ?
+                mMaterialLeftRightPadding * -1 : 0;
+        float additionalRight = (BLOCK.RIGHT.equals(block) || BLOCK.COMPLETE.equals(block)) ?
+                mMaterialLeftRightPadding : 0;
 
         // Just paint unselected
-        canvas.drawRect(dayCells[cellNumber].left + additionalLeft,
-                dayCells[cellNumber].top,
-                dayCells[cellNumber].right + additionalRight,
-                dayCells[cellNumber].bottom, backgroundColor);
-
-        // And then the selection with padding to the background (so the background shows on the
-        // left and right extremes):
-        if (selected) {
-            canvas.drawRect(dayCells[cellNumber].left,
-                    dayCells[cellNumber].top,
-                    dayCells[cellNumber].right,
-                    dayCells[cellNumber].bottom, selectedBackgroundColor);
-        }
+        canvas.drawRect(left + additionalLeft, top, right + additionalRight, bottom, color);
     }
 
     protected void drawOverflow(Canvas canvas, ArrayList<Integer> mCellsWithOverflow, RectF[] dayCells) {
